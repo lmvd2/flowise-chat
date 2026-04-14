@@ -3,15 +3,18 @@ import { useState, useRef, useEffect } from "react";
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMessage];
+
     setMessages(updatedMessages);
     setInput("");
+    setLoading(true);
 
     try {
       const res = await fetch("https://cloud.flowiseai.com/api/v1/prediction/414bdc3e-3330-4fdf-b25b-8eb85556fb18", {
@@ -24,37 +27,68 @@ export default function App() {
 
       const data = await res.json();
 
-      const botMessage = {
-        role: "bot",
-        content: data.text || "Sin respuesta",
-      };
+      // ✨ efecto escritura
+      let text = data.text || "Sin respuesta";
+      let currentText = "";
 
+      const botMessage = { role: "bot", content: "" };
       setMessages([...updatedMessages, botMessage]);
+
+      for (let i = 0; i < text.length; i++) {
+        currentText += text[i];
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        setMessages((prev) => {
+          const newMsgs = [...prev];
+          newMsgs[newMsgs.length - 1] = {
+            role: "bot",
+            content: currentText,
+          };
+          return newMsgs;
+        });
+      }
     } catch (error) {
       console.error(error);
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
   return (
     <div style={styles.container}>
+      <div style={styles.header}>🤖 Hipotecas</div>
+
       <div style={styles.chatBox}>
         {messages.map((msg, i) => (
           <div
             key={i}
             style={{
-              ...styles.message,
-              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              background:
-                msg.role === "user" ? "#2563eb" : "#1f2937",
+              ...styles.messageWrapper,
+              justifyContent:
+                msg.role === "user" ? "flex-end" : "flex-start",
             }}
           >
-            {msg.content}
+            <div
+              style={{
+                ...styles.message,
+                background:
+                  msg.role === "user" ? "#2563eb" : "#1f2937",
+              }}
+            >
+              {formatText(msg.content)}
+            </div>
           </div>
         ))}
+
+        {loading && (
+          <div style={styles.loader}>Escribiendo...</div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
@@ -74,14 +108,27 @@ export default function App() {
   );
 }
 
+// 🧠 formato básico tipo markdown
+function formatText(text) {
+  return text.split("\n").map((line, i) => (
+    <div key={i}>{line}</div>
+  ));
+}
+
 const styles = {
   container: {
     height: "100vh",
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#111827",
+    background: "#0f172a",
     color: "white",
-    fontFamily: "Arial, sans-serif",
+    fontFamily: "Inter, sans-serif",
+  },
+  header: {
+    padding: "15px",
+    textAlign: "center",
+    borderBottom: "1px solid #1f2937",
+    fontWeight: "bold",
   },
   chatBox: {
     flex: 1,
@@ -89,36 +136,44 @@ const styles = {
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
+    gap: "12px",
+  },
+  messageWrapper: {
+    display: "flex",
   },
   message: {
-    padding: "10px 15px",
-    borderRadius: "12px",
+    padding: "12px 16px",
+    borderRadius: "14px",
     maxWidth: "70%",
     fontSize: "14px",
+    lineHeight: "1.4",
   },
   inputContainer: {
     display: "flex",
     padding: "10px",
-    borderTop: "1px solid #374151",
-    backgroundColor: "#1f2937",
+    borderTop: "1px solid #1f2937",
+    background: "#020617",
   },
   input: {
     flex: 1,
-    padding: "10px",
-    borderRadius: "8px",
+    padding: "12px",
+    borderRadius: "10px",
     border: "none",
     outline: "none",
-    marginRight: "10px",
-    backgroundColor: "#374151",
+    background: "#1e293b",
     color: "white",
   },
   button: {
-    padding: "10px 15px",
-    borderRadius: "8px",
+    marginLeft: "10px",
+    padding: "12px 16px",
+    borderRadius: "10px",
     border: "none",
-    backgroundColor: "#2563eb",
+    background: "#2563eb",
     color: "white",
     cursor: "pointer",
+  },
+  loader: {
+    fontSize: "12px",
+    opacity: 0.6,
   },
 };
