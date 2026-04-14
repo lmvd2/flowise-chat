@@ -17,7 +17,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://cloud.flowiseai.com/api/v1/prediction/414bdc3e-3330-4fdf-b25b-8eb85556fb18", {
+      const res = await fetch(" ", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
