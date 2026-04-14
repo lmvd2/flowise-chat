@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const bottomRef = useRef(null);
 
   const sendMessage = async () => {
-    if (!input) return;
+    if (!input.trim()) return;
 
     const userMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
-
     setInput("");
 
     try {
@@ -35,24 +35,90 @@ export default function App() {
     }
   };
 
-  return (
-    <div style={{ maxWidth: 600, margin: "auto", padding: 20 }}>
-      <h2>Chat con Flowise</h2>
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-      <div style={{ minHeight: 300, marginBottom: 20 }}>
+  return (
+    <div style={styles.container}>
+      <div style={styles.chatBox}>
         {messages.map((msg, i) => (
-          <div key={i}>
-            <b>{msg.role === "user" ? "Tú" : "Bot"}:</b> {msg.content}
+          <div
+            key={i}
+            style={{
+              ...styles.message,
+              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+              background:
+                msg.role === "user" ? "#2563eb" : "#1f2937",
+            }}
+          >
+            {msg.content}
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
 
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Escribe..."
-      />
-      <button onClick={sendMessage}>Enviar</button>
+      <div style={styles.inputContainer}>
+        <input
+          style={styles.input}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Escribe tu mensaje..."
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <button style={styles.button} onClick={sendMessage}>
+          ➤
+        </button>
+      </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    backgroundColor: "#111827",
+    color: "white",
+    fontFamily: "Arial, sans-serif",
+  },
+  chatBox: {
+    flex: 1,
+    padding: "20px",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  message: {
+    padding: "10px 15px",
+    borderRadius: "12px",
+    maxWidth: "70%",
+    fontSize: "14px",
+  },
+  inputContainer: {
+    display: "flex",
+    padding: "10px",
+    borderTop: "1px solid #374151",
+    backgroundColor: "#1f2937",
+  },
+  input: {
+    flex: 1,
+    padding: "10px",
+    borderRadius: "8px",
+    border: "none",
+    outline: "none",
+    marginRight: "10px",
+    backgroundColor: "#374151",
+    color: "white",
+  },
+  button: {
+    padding: "10px 15px",
+    borderRadius: "8px",
+    border: "none",
+    backgroundColor: "#2563eb",
+    color: "white",
+    cursor: "pointer",
+  },
+};
